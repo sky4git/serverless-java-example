@@ -31,7 +31,7 @@ public class ServerlessJavaExampleStack extends Stack {
                 .functionName("GetRestaurantDealsByTime")
                 .runtime(Runtime.JAVA_21)
                 .code(Code.fromAsset("lambda/getRestaurantDealsByTime"))
-                .handler("com.myorg.Task1Handler::handleRequest")
+                .handler("com.myorg.GetRestaurantDealsByTime::handleRequest")
                 .memorySize(128)
                 .timeout(Duration.seconds(30))
                 .build();
