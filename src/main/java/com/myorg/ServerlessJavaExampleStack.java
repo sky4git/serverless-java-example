@@ -9,6 +9,7 @@ import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.Code;
 
 import java.util.List;
+import java.util.Map;
 
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.services.apigatewayv2.AddRoutesOptions;
@@ -24,6 +25,14 @@ public class ServerlessJavaExampleStack extends Stack {
         public ServerlessJavaExampleStack(final Construct scope, final String id, final StackProps props) {
                 super(scope, id, props);
 
+                // Create a Layer for Shared code
+                LayerVersion sharedLayer = LayerVersion.Builder.create(this, "SharedLayer")
+                                .layerVersionName("SharedLayer")
+                                .code(Code.fromAsset("lambda/shared/target/shared-1.0.0-shaded.jar"))
+                                .compatibleRuntimes(List.of(Runtime.JAVA_21))
+                                .description("Shared code layer for Lambda functions")
+                                .build();
+
                 // Lambda for Task 1
                 // Write an API that returns a list of all the available restaurant deals
                 // that are active at a specified time of day
@@ -35,8 +44,11 @@ public class ServerlessJavaExampleStack extends Stack {
                                 .handler("com.myorg.GetRestaurantDealsByTime::handleRequest")
                                 .memorySize(128)
                                 .timeout(Duration.seconds(30))
-
-                                .description("Lambda function for Task 1")
+                                .layers(List.of(sharedLayer))
+                                .environment(Map.of(
+                                                "RESTAURANTS_API_URL",
+                                                "https://eccdn.com.au/misc/challengedata.json"))
+                                .description("Lambda function to fetch restaurant deals by time")
                                 .build();
 
                 // Define HTTP API Gateway v2 and integrate with Lambda

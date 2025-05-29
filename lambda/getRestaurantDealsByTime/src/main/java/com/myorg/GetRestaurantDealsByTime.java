@@ -5,11 +5,6 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.myorg.model.api.DealDto;
-import com.myorg.model.api.RestaurantsApiDto;
-import com.myorg.model.api.RestaurantDto;
-import com.myorg.model.response.ResponseDealDto;
-import com.myorg.model.response.ResponseDto;
 import java.net.URL;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -19,19 +14,32 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
+import com.myorg.model.api.RestaurantDto;
+import com.myorg.model.api.RestaurantsApiDto;
+import com.myorg.model.response.ResponseDealDto;
+import com.myorg.model.response.ResponseDto;
+import com.myorg.Utils;
+import com.myorg.RestaurantsFetcher;
 
 public class GetRestaurantDealsByTime
 		implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
-	private static final ObjectMapper mapper = new ObjectMapper();
 
 	@Override
 	public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent event, Context context) {
 		context.getLogger().log("Received event: " + event.toString());
+		// make sure we have the required environment variable set
+		if (System.getenv("RESTAURANTS_API_URL") == null || System.getenv("RESTAURANTS_API_URL").isEmpty()) {
+			// if not, throw an exception
+			throw new IllegalStateException("Environment variable 'RESTAURANTS_API_URL' is not set.");
+		}
+		// validate that we have the time query parameter
 		Map<String, String> queryParams = event.getQueryStringParameters();
 		String time = queryParams != null ? queryParams.get("time") : null;
 		if (time == null || time.isEmpty()) {
 			return createResponse(400, "Missing required 'time' parameter");
 		}
+
+		// make sure the time is in the correct format
 		LocalTime localTime;
 		try {
 			DateTimeFormatter formatter = new DateTimeFormatterBuilder()
@@ -44,8 +52,9 @@ public class GetRestaurantDealsByTime
 			return createResponse(400, "Invalid time format. Please use format like 10:20am or 10:20pm.");
 		}
 
+		// fetch the deals and provide the response
 		List<ResponseDealDto> activeDeals = getActiveDeals(localTime);
-		String responseBody = toJson(new ResponseDto(activeDeals));
+		String responseBody = Utils.toJson(new ResponseDto(activeDeals));
 		return createResponse(200, responseBody);
 	}
 
@@ -58,24 +67,15 @@ public class GetRestaurantDealsByTime
 	}
 
 	private List<ResponseDealDto> getActiveDeals(LocalTime time) {
-		RestaurantsApiDto restaurantsApiDto = fetchRestaurants();
-		System.out.println("Fetched restaurants: " + toJson(restaurantsApiDto));
+		RestaurantsApiDto restaurantsApiDto = RestaurantsFetcher.fetchRestaurants(System.getenv("RESTAURANTS_API_URL"));
+		// System.out.println("Fetched restaurants: " +
+		// Utils.toJson(restaurantsApiDto));
 		// Filter restaurants that have active deals at the specified time
 		if (restaurantsApiDto != null) {
 			List<RestaurantDto> restaurantsWithActiveDeals = restaurantsApiDto.getRestaurantsByActiveDeals(time);
 			return convertToResponseDealDtos(restaurantsWithActiveDeals);
 		}
 		return List.of();
-	}
-
-	private RestaurantsApiDto fetchRestaurants() {
-		try {
-			return mapper.readValue(
-					new URL("https://eccdn.com.au/misc/challengedata.json"),
-					RestaurantsApiDto.class);
-		} catch (Exception e) {
-			throw new RuntimeException("Error fetching restaurants", e);
-		}
 	}
 
 	private List<ResponseDealDto> convertToResponseDealDtos(List<RestaurantDto> restaurants) {
@@ -93,13 +93,5 @@ public class GetRestaurantDealsByTime
 						deal.lightning(),
 						deal.qtyLeft())))
 				.collect(Collectors.toList());
-	}
-
-	private String toJson(Object obj) {
-		try {
-			return mapper.writeValueAsString(obj);
-		} catch (Exception e) {
-			return "{}";
-		}
 	}
 }

@@ -1,9 +1,14 @@
 #!/bin/bash
 set -e
 
-# Navigate to function-one and run tests
-cd lambda/getRestaurantDealsByTime
-mvn package
+# Navigate to lambda layer and run tests
+cd lambda/shared
+mvn install
+cd ..
+
+# Navigate to function getRestaurantDealsByTime and run tests
+cd getRestaurantDealsByTime
+mvn clean package
 cd ..
 
 # Navigate to the CDK project and deploy
