@@ -19,5 +19,7 @@ cd ..
 
 # Navigate to the CDK project and deploy
 cd ..
-cdk deploy --profile specta
+cdk deploy
+# To use with profile
+# cdk deploy --profile <profile_name>
 echo "Deployment process completed successfully."

@@ -15,13 +15,21 @@ It is a [Maven](https://maven.apache.org/) based project, so you can open this p
 
 Enjoy!
 
-## Deploymnt requirements
+## Deployment requirements
 
 - Java 21
 - AWS CLI profile configured in your local machine
 
-# Deploy
+## Deploy
 
 Run `aws sso login` in your terminal if you are not logged in with aws cli.
 
 Deploy using `sh deploy.sh`
+
+## Test
+
+> Get restaurant deals by time supplied
+> `curl --location '[API_GATEWAY_URL]/deals?time=3%3A20pm'`
+
+> Get the peak time slot
+> `curl --location '[API_GATEWAY_URL]/peaktime'`

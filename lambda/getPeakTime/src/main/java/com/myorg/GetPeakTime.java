@@ -50,7 +50,7 @@ public class GetPeakTime implements RequestHandler<APIGatewayProxyRequestEvent, 
 	}
 
 	private PeakTimeWindowDto findPeakTime(List<RestaurantDto> restaurants) {
-		// our calculatuion will be based on 15 minute time slots
+		// our calculation will be based on 15 minute time slots
 		Duration peakDuration = Duration.ofMinutes(15);
 
 		Map<LocalTime, Integer> dealCounts = new TreeMap<>();
