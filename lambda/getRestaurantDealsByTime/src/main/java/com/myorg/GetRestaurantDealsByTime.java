@@ -36,7 +36,7 @@ public class GetRestaurantDealsByTime
 		Map<String, String> queryParams = event.getQueryStringParameters();
 		String time = queryParams != null ? queryParams.get("time") : null;
 		if (time == null || time.isEmpty()) {
-			return createResponse(400, "Missing required 'time' parameter");
+			return Utils.createResponse(400, "Missing required 'time' parameter");
 		}
 
 		// make sure the time is in the correct format
@@ -49,21 +49,13 @@ public class GetRestaurantDealsByTime
 
 			localTime = LocalTime.parse(time, formatter);
 		} catch (DateTimeParseException e) {
-			return createResponse(400, "Invalid time format. Please use format like 10:20am or 10:20pm.");
+			return Utils.createResponse(400, "Invalid time format. Please use format like 10:20am or 10:20pm.");
 		}
 
 		// fetch the deals and provide the response
 		List<ResponseDealDto> activeDeals = getActiveDeals(localTime);
 		String responseBody = Utils.toJson(new ResponseDto(activeDeals));
-		return createResponse(200, responseBody);
-	}
-
-	private APIGatewayProxyResponseEvent createResponse(int statusCode, String body) {
-		APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
-		response.setStatusCode(statusCode);
-		response.setBody(body);
-		response.setHeaders(Map.of("Content-Type", "application/json"));
-		return response;
+		return Utils.createResponse(200, responseBody);
 	}
 
 	private List<ResponseDealDto> getActiveDeals(LocalTime time) {
@@ -79,14 +71,15 @@ public class GetRestaurantDealsByTime
 	}
 
 	private List<ResponseDealDto> convertToResponseDealDtos(List<RestaurantDto> restaurants) {
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("h:mma", Locale.ENGLISH);
 		return restaurants.stream()
 				.flatMap(restaurant -> restaurant.deals().stream().map(deal -> new ResponseDealDto(
 						restaurant.id(),
 						restaurant.name(),
 						restaurant.address1(),
 						restaurant.suburb(),
-						restaurant.open() != null ? restaurant.open().toString() : null,
-						restaurant.close() != null ? restaurant.close().toString() : null,
+						restaurant.open() != null ? restaurant.open().format(formatter) : null,
+						restaurant.close() != null ? restaurant.close().format(formatter) : null,
 						deal.id(),
 						deal.discount(),
 						deal.dineIn(),

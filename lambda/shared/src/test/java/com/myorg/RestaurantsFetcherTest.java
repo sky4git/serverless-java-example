@@ -66,7 +66,7 @@ public class RestaurantsFetcherTest {
 		RestaurantsApiDto result = RestaurantsFetcher.fetchRestaurants(baseUrl);
 		assertNotNull(result);
 		List<RestaurantDto> restaurantsWithActiveDeals = result.getRestaurantsByActiveDeals(LocalTime.of(15, 20));
-		assertEquals(3, restaurantsWithActiveDeals.size());
+		assertEquals(4, restaurantsWithActiveDeals.size());
 	}
 
 	private String readFile(String path) {

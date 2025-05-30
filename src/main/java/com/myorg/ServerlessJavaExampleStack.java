@@ -51,10 +51,27 @@ public class ServerlessJavaExampleStack extends Stack {
                                 .description("Lambda function to fetch restaurant deals by time")
                                 .build();
 
+                // Lambda for Task 2
+                // Write an API that returns the peak time window for restaurant deals
+                Function getPeakTime = Function.Builder.create(this, "GetPeakTime")
+                                .functionName("GetPeakTime")
+                                .runtime(Runtime.JAVA_21)
+                                .code(Code.fromAsset("lambda/getPeakTime/target/getPeakTime-1.0.0.jar"))
+                                .handler("com.myorg.GetPeakTime::handleRequest")
+                                .memorySize(128)
+                                .timeout(Duration.seconds(30))
+                                .layers(List.of(sharedLayer))
+                                .environment(Map.of(
+                                                "RESTAURANTS_API_URL",
+                                                "https://eccdn.com.au/misc/challengedata.json"))
+                                .description("Lambda function to fetch peak time")
+                                .build();
+
                 // Define HTTP API Gateway v2 and integrate with Lambda
                 HttpLambdaIntegration dealsIntegration = new HttpLambdaIntegration(
                                 "DealsIntegration", getRestaurantDealsByTime);
-
+                HttpLambdaIntegration peakTimeIntegration = new HttpLambdaIntegration("PeakTimeIntegration",
+                                getPeakTime);
                 // Create the HTTP API
                 HttpApi httpApi = HttpApi.Builder.create(this, "RestaurantDealsHttpApi")
                                 .apiName("RestaurantDealsHttpApi")
@@ -66,6 +83,13 @@ public class ServerlessJavaExampleStack extends Stack {
                                 .path("/deals")
                                 .methods(List.of(HttpMethod.GET))
                                 .integration(dealsIntegration)
+                                .build());
+
+                // Add a route to the API Gateway for the `getPeakTime` Lambda function
+                httpApi.addRoutes(AddRoutesOptions.builder()
+                                .path("/peaktime")
+                                .methods(List.of(HttpMethod.GET))
+                                .integration(peakTimeIntegration)
                                 .build());
         }
 }

@@ -19,9 +19,9 @@ public record DealDto(
 		Boolean validQuantity,
 		Boolean validDiscountPercentage) {
 
-	public Boolean isValidDiscountPercentage() {
+	public boolean isValidDiscountPercentage() {
 		try {
-			return validDiscountPercentage != null ? validDiscountPercentage : Double.parseDouble(discount) > 0;
+			return validDiscountPercentage ? validDiscountPercentage : Double.parseDouble(discount) > 0;
 		} catch (NumberFormatException | NullPointerException e) {
 			return false;
 		}
@@ -35,25 +35,47 @@ public record DealDto(
 		}
 	}
 
-	// We need to check if the quantity is valid and greater than 0 for deal to be available
-	public Boolean isValidQuantity() {
+	// We need to check if the quantity is valid and greater than 0 for deal to be
+	// available
+	public boolean isValidQuantity() {
 		return validQuantity != null ? validQuantity : quantityLeft() > 0;
 	}
 
 	// Is the deal available by time
 	// considers the edge cases of the exact open & close time being valid
-	public Boolean isAvailableByTime(LocalTime time) {
-		LocalTime startTime = start != null ? start : open;
-		LocalTime endTime = end != null ? end : close;
+	public boolean isAvailableByTime(LocalTime time) {
+		LocalTime startTime = (start != null) ? start : open;
+		LocalTime endTime = (end != null) ? end : close;
 		if (startTime == null || endTime == null) {
-			return false; // If either start or end time is null, the deal is not available
+			// If neither start/end nor open/close are set, treat as always available
+			return true;
 		}
-		return (time.equals(startTime) || (time.isAfter(startTime) && time.isBefore(endTime)) || time.equals(endTime));
+		// Inclusive at both ends
+		return (!time.isBefore(startTime)) && (!time.isAfter(endTime));
 	}
 
-	public Boolean isAvailable(LocalTime time) {
-		// Check if the deal is valid based on quantity, discount percentage, and time
-		return isValidQuantity() && isValidDiscountPercentage() && isAvailableByTime(time);
+	public boolean isAvailable(LocalTime time, LocalTime restaurantOpen, LocalTime restaurantClose) {
+		LocalTime startTime = (start != null) ? start : open;
+		LocalTime endTime = (end != null) ? end : close;
+
+		if (startTime == null && endTime == null) {
+			// No deal-specific time, fall back to restaurant hours
+			if (restaurantOpen != null && restaurantClose != null) {
+				return !time.isBefore(restaurantOpen) && !time.isAfter(restaurantClose);
+			}
+			// If no restaurant hours, treat as always available
+			return true;
+		}
+		if (startTime != null && endTime != null) {
+			return !time.isBefore(startTime) && !time.isAfter(endTime);
+		}
+		if (startTime != null) {
+			return !time.isBefore(startTime);
+		}
+		if (endTime != null) {
+			return !time.isAfter(endTime);
+		}
+		return true;
 	}
 
 }

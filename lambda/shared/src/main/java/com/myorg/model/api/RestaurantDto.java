@@ -14,11 +14,16 @@ public record RestaurantDto(
 		String suburb,
 		List<String> cuisines,
 		String imageLink,
-		String open,
-		String close,
+		@JsonFormat(pattern = "h:mma") @JsonDeserialize(using = LocalTimeDeserializer.class) @JsonSerialize(using = LocalTimeSerializer.class) LocalTime open,
+		@JsonFormat(pattern = "h:mma") @JsonDeserialize(using = LocalTimeDeserializer.class) @JsonSerialize(using = LocalTimeSerializer.class) LocalTime close,
 		List<DealDto> deals) {
 
 	public List<DealDto> getActiveDeals(LocalTime time) {
-		return deals.stream().filter(deal -> deal.isAvailable(time)).toList();
+		LocalTime restaurantOpenTime = (open != null) ? open : LocalTime.MIN;
+		LocalTime restaurantCloseTime = (close != null) ? close : LocalTime.MAX;
+
+		return deals.stream()
+				.filter(deal -> deal.isAvailable(time, restaurantOpenTime, restaurantCloseTime))
+				.toList();
 	}
 }

@@ -11,6 +11,11 @@ cd getRestaurantDealsByTime
 mvn clean package
 cd ..
 
+# Navigate to function getPeakTime and run tests
+cd getPeakTime
+mvn clean package
+cd ..
+
 # Navigate to the CDK project and deploy
 cd ..
 cdk deploy
