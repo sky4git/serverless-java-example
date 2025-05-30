@@ -88,6 +88,27 @@ public class GetRestaurantDealsByTimeTest {
 	}
 
 	@Test
+	public void testHandler_withMockedFetcher_failsToFetchData() throws Exception {
+		// Create instance of handler
+		GetRestaurantDealsByTime handler = new GetRestaurantDealsByTime();
+		new EnvironmentVariables("RESTAURANTS_API_URL", "dummy")
+				.execute(() -> {
+					try (MockedStatic<RestaurantsFetcher> fetcherMock = mockStatic(RestaurantsFetcher.class)) {
+						fetcherMock.when(() -> RestaurantsFetcher.fetchRestaurants("dummy"))
+								.thenThrow(new RuntimeException("Failed to fetch data"));
+						// Create a request event with a valid time query parameter
+						APIGatewayProxyRequestEvent requestEvent = new APIGatewayProxyRequestEvent();
+						requestEvent.setQueryStringParameters(Map.of("time", "3:20pm"));
+
+						// Call handler and verify it returns 200 status code
+						APIGatewayProxyResponseEvent response = handler.handleRequest(requestEvent, new DummyContext());
+						assertEquals(500, response.getStatusCode());
+						assertEquals("Failed to fetch restaurant deals.", response.getBody());
+					}
+				});
+	}
+
+	@Test
 	public void testHandler_withMockedFetcher() throws Exception {
 		// Create instance of handler
 		GetRestaurantDealsByTime handler = new GetRestaurantDealsByTime();
@@ -102,18 +123,26 @@ public class GetRestaurantDealsByTimeTest {
 						APIGatewayProxyRequestEvent requestEvent = new APIGatewayProxyRequestEvent();
 						requestEvent.setQueryStringParameters(Map.of("time", "3:20pm"));
 
-						// Mock the fetchRestaurants method to return the DTO
-						when(RestaurantsFetcher.fetchRestaurants("dummy")).thenReturn(dto);
-
 						// Call handler and verify it returns 200 status code
 						APIGatewayProxyResponseEvent response = handler.handleRequest(requestEvent, new DummyContext());
 						assertEquals(200, response.getStatusCode());
 						assertEquals("application/json", response.getHeaders().get("Content-Type"));
-						System.out.println("Response body: " + response.getBody());
+
 						// Verify the response body contains the expected deals
 						ResponseDto responseDto = mapper.readValue(response.getBody(), ResponseDto.class);
 						List<ResponseDealDto> deals = responseDto.deals();
 						assertFalse(deals.isEmpty());
+						assertEquals("DEA567C5-F64C-3C03-FF00-E3B24909BE00", deals.get(0).restaurantObjectId());
+						assertEquals("Masala Kitchen", deals.get(0).restaurantName());
+						assertEquals("55 Walsh Street", deals.get(0).restaurantAddress1());
+						assertEquals("Lower East", deals.get(0).restaurantSuburb());
+						assertEquals("3:00pm", deals.get(0).restaurantOpen());
+						assertEquals("9:00pm", deals.get(0).restaurantClose());
+						assertEquals("DEA567C5-0000-3C03-FF00-E3B24909BE00", deals.get(0).dealObjectId());
+						assertEquals("50", deals.get(0).discount());
+						assertEquals(false, deals.get(0).dineIn());
+						assertEquals(true, deals.get(0).lightning());
+						assertEquals("5", deals.get(0).qtyLeft());
 					}
 				});
 	}

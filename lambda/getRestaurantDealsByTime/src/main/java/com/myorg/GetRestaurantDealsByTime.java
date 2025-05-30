@@ -52,16 +52,26 @@ public class GetRestaurantDealsByTime
 			return Utils.createResponse(400, "Invalid time format. Please use format like 10:20am or 10:20pm.");
 		}
 
-		// fetch the deals and provide the response
-		List<ResponseDealDto> activeDeals = getActiveDeals(localTime);
-		String responseBody = Utils.toJson(new ResponseDto(activeDeals));
-		return Utils.createResponse(200, responseBody);
+		try {
+			// fetch the deals and provide the response
+			List<ResponseDealDto> activeDeals = getActiveDeals(localTime);
+			String responseBody = Utils.toJson(new ResponseDto(activeDeals));
+			return Utils.createResponse(200, responseBody);
+		} catch (Exception e) {
+			return Utils.createResponse(500, "Failed to fetch restaurant deals.");
+		}
+
 	}
 
 	private List<ResponseDealDto> getActiveDeals(LocalTime time) {
-		RestaurantsApiDto restaurantsApiDto = RestaurantsFetcher.fetchRestaurants(System.getenv("RESTAURANTS_API_URL"));
-		// System.out.println("Fetched restaurants: " +
-		// Utils.toJson(restaurantsApiDto));
+		RestaurantsApiDto restaurantsApiDto;
+		try {
+			restaurantsApiDto = RestaurantsFetcher
+					.fetchRestaurants(System.getenv("RESTAURANTS_API_URL"));
+			System.out.println("Fetched restaurants: " + Utils.toJson(restaurantsApiDto));
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to fetch restaurants.", e);
+		}
 		// Filter restaurants that have active deals at the specified time
 		if (restaurantsApiDto != null) {
 			List<RestaurantDto> restaurantsWithActiveDeals = restaurantsApiDto.getRestaurantsByActiveDeals(time);
@@ -78,8 +88,8 @@ public class GetRestaurantDealsByTime
 						restaurant.name(),
 						restaurant.address1(),
 						restaurant.suburb(),
-						restaurant.open() != null ? restaurant.open().format(formatter) : null,
-						restaurant.close() != null ? restaurant.close().format(formatter) : null,
+						restaurant.open() != null ? restaurant.open().format(formatter).toLowerCase() : null,
+						restaurant.close() != null ? restaurant.close().format(formatter).toLowerCase() : null,
 						deal.id(),
 						deal.discount(),
 						deal.dineIn(),

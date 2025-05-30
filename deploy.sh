@@ -1,21 +1,23 @@
 #!/bin/bash
 set -e
 
+echo "Starting deployment process..."
 # Navigate to lambda layer and run tests
 cd lambda/shared
-mvn install
+mvn -q install
 cd ..
 
 # Navigate to function getRestaurantDealsByTime and run tests
 cd getRestaurantDealsByTime
-mvn clean package
+mvn -q clean package
 cd ..
 
 # Navigate to function getPeakTime and run tests
 cd getPeakTime
-mvn clean package
+mvn -q clean package
 cd ..
 
 # Navigate to the CDK project and deploy
 cd ..
-cdk deploy
+cdk deploy --profile specta
+echo "Deployment process completed successfully."

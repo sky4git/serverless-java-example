@@ -16,6 +16,7 @@ import software.amazon.awscdk.services.apigatewayv2.AddRoutesOptions;
 import software.amazon.awscdk.services.apigatewayv2.HttpApi;
 import software.amazon.awscdk.services.apigatewayv2.HttpMethod;
 import software.amazon.awscdk.aws_apigatewayv2_integrations.HttpLambdaIntegration;
+import software.amazon.awscdk.RemovalPolicy;
 
 public class ServerlessJavaExampleStack extends Stack {
         public ServerlessJavaExampleStack(final Construct scope, final String id) {
@@ -31,6 +32,7 @@ public class ServerlessJavaExampleStack extends Stack {
                                 .code(Code.fromAsset("lambda/shared/target/shared-1.0.0-shaded.jar"))
                                 .compatibleRuntimes(List.of(Runtime.JAVA_21))
                                 .description("Shared code layer for Lambda functions")
+                                .removalPolicy(RemovalPolicy.DESTROY)
                                 .build();
 
                 // Lambda for Task 1
