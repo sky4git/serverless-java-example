@@ -19,6 +19,7 @@ Enjoy!
 
 - Java 21
 - AWS CLI profile configured in your local machine
+- Install AWS CDK `npm install -g aws-cdk` (https://docs.aws.amazon.com/cdk/v2/guide/getting-started.html)
 
 ## Deploy
 
